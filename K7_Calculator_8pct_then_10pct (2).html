@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Investment Simulator</title>
+<style>
+:root{--bg:#f4f7f5;--card:#fff;--ink:#14251d;--muted:#6c7b74;--accent:#2e7d52;--accent2:#174c35;--line:#dfe7e2;--good:#176b42;--bad:#a33b35}
+*{box-sizing:border-box} body{margin:0;background:linear-gradient(135deg,#eef5f0,#f8faf9);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+.wrap{max-width:1180px;margin:auto;padding:28px 20px 50px}
+header{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:22px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
+h1{font-size:clamp(28px,4vw,46px);line-height:1.02;margin:7px 0}.sub{color:var(--muted);max-width:650px}
+.badge{background:#e5f2ea;color:var(--good);padding:10px 14px;border-radius:999px;font-weight:800;font-size:12px}
+.grid{display:grid;grid-template-columns:1.05fr 1.95fr;gap:18px}
+.card{background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 12px 30px rgba(21,48,36,.06)}
+.card h2{font-size:15px;margin:0 0 16px}.inputs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{font-size:12px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px}
+input{width:100%;padding:12px 13px;border:1px solid #ccd8d1;border-radius:12px;font-size:15px;font-weight:750;color:var(--ink);background:#fbfdfc}
+input:focus{outline:2px solid #b8d9c5;border-color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:linear-gradient(145deg,#173f2e,#245e43);color:white;border-radius:18px;padding:16px;min-height:112px}
+.kpi .t{font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.08em}.kpi .v{font-size:25px;font-weight:850;margin-top:10px}.kpi .s{font-size:11px;opacity:.7;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.positive{color:var(--good);font-weight:800}.negative{color:var(--bad);font-weight:800}.kpi.cash-positive{background:linear-gradient(145deg,#176b42,#238657)}.kpi.cash-negative{background:linear-gradient(145deg,#8f302b,#b34740)}
+.section{margin-top:18px}.hero{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:15px}.heroValue{font-size:34px;font-weight:900}.pill{padding:7px 10px;border-radius:10px;background:#edf6f0;color:var(--good);font-size:12px;font-weight:800}
+.note{font-size:11px;color:var(--muted);line-height:1.5;margin-top:14px}
+.btn{border:0;border-radius:12px;padding:10px 14px;background:var(--accent2);color:white;font-weight:800;cursor:pointer}.btn:hover{opacity:.9}.calc-btn{margin-top:14px;background:#00385f;color:#fff;border-color:#00385f;min-height:44px;width:100%;font-size:14px}.calc-btn:active{transform:translateY(1px)}
+.reportMeta{display:none}
+.assumption-banner{display:flex;align-items:center;gap:18px;background:#f3f8ee;border:1px solid #e2ead7;border-radius:18px;padding:18px 22px;margin:0 0 18px}
+.assumption-icon{width:42px;height:42px;border-radius:50%;border:3px solid #2e7d52;display:flex;align-items:center;justify-content:center;color:#2e7d52;font-weight:900;font-size:23px;flex:0 0 42px}
+.assumption-copy{font-size:13px;line-height:1.55;color:#52635b}
+.assumption-title{font-size:16px;font-weight:900;color:#176b42;margin-bottom:4px}
+
+@media print{
+ body{background:white!important}
+ .wrap{max-width:none;padding:10px}
+ .card,.kpi{box-shadow:none}
+ .btn{display:none!important}
+ input{border:0;padding:0;background:white}
+ .reportMeta{display:block}
+ .eyebrow{color:#222}
+ .card{break-inside:avoid}
+ .grid{grid-template-columns:1fr 1fr}
+ .note{font-size:9px}
+}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){
+  .wrap{padding:18px 12px}
+  .inputs{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr}
+  .kpi .v{font-size:24px}
+  table{font-size:11px}
+  th,td{padding:8px 6px}
+  .hero{gap:10px;flex-wrap:wrap}
+  .pill{white-space:normal;text-align:center}
+}
+
+/* Thorpe Nahar name-card theme */
+:root{--bg:#f4f6f8;--card:#fff;--ink:#163247;--muted:#687680;--accent:#003f70;--accent2:#00385f;--line:#dbe3e9;--good:#17633f;--bad:#a33b35}
+body{background:linear-gradient(135deg,#f3f6f8,#fff 58%,#eef2f5);color:var(--ink)}
+header{background:linear-gradient(115deg,#003b67 0%,#004d80 68%,#55545e 100%);margin:-28px -20px 24px;padding:22px 28px;border-radius:0 0 22px 22px;color:#fff;align-items:center}
+header .eyebrow{color:#dce9f2} header .sub{color:#e7eef3} header h1{letter-spacing:-.03em}
+.card{border-color:#d9e2e8;box-shadow:0 14px 34px rgba(0,47,82,.07)}
+.kpi{background:linear-gradient(145deg,#00385f,#005184);box-shadow:0 10px 24px rgba(0,56,95,.14)}
+.assumption-banner{background:#f1f5f8;border:1px solid #dbe4ea}
+.assumption-icon{border-color:#003b67;color:#003b67}.assumption-title{color:#003b67}
+.pill{background:#edf3f7;color:#003b67}.heroValue{color:#003b67}.btn{background:#fff;color:#003b67;border:1px solid rgba(255,255,255,.5)}
+.brand-lockup{display:flex;align-items:center;gap:18px;min-width:0}.brand-lockup img{width:125px;height:68px;object-fit:contain;border-radius:8px;background:#fff;padding:5px}.brand-lockup>div:last-child{min-width:0}
+@media(max-width:700px){header{margin:-18px -12px 18px;padding:20px}.brand-lockup img{width:105px;height:55px}.brand-lockup{gap:10px}}
+@media print{header{background:#fff!important;color:#003b67!important;border-bottom:3px solid #003b67}.brand-lockup .sub{color:#687680!important}.brand-lockup .eyebrow{color:#003b67!important}.brand-lockup h1{color:#003b67!important}}
+
+.discount-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.toggle-card{flex:1;min-width:190px;border:1px solid #d9e1e8;border-radius:14px;padding:12px 14px;background:#fbfcfd;display:flex;align-items:center;justify-content:space-between}.toggle-card span{font-size:13px;font-weight:800;color:#17344b}.switch{position:relative;width:48px;height:28px;display:inline-block}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;inset:0;background:#c8d1d8;border-radius:28px;transition:.2s}.slider:before{content:"";position:absolute;height:22px;width:22px;left:3px;top:3px;background:white;border-radius:50%;transition:.2s;box-shadow:0 1px 3px #0002}.switch input:checked + .slider{background:#003b67}.switch input:checked + .slider:before{transform:translateX(20px)}
+
+.market-ref{margin-top:8px;padding:10px 11px;border:1px solid #e7e7e7;border-radius:10px;background:#fafafa;font-size:11px;line-height:1.45;color:#555}
+.market-ref .ref-title{font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#777;margin-bottom:3px}
+.market-ref .ref-main{font-weight:800;color:#222;font-size:12px}
+.market-ref .ref-sub{margin-top:2px}
+.market-ref a{display:inline-block;margin-top:5px;font-weight:800;color:#222;text-decoration:underline}
+.market-ref .ref-note{margin-top:4px;color:#888;font-size:10px}
+
+/* Cumulative investment performance chart */
+.cumulative-chart-card{margin-bottom:18px;overflow:hidden;background:linear-gradient(145deg,#f8fbfd,#ffffff);}
+.chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
+.chart-title{font-size:15px;font-weight:900;color:#17344b;margin:0}
+.chart-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.chart-badge{font-size:10px;font-weight:900;padding:7px 9px;border-radius:999px;background:#eaf5ef;color:#17633f;white-space:nowrap}
+.chart-wrap{position:relative;height:250px;border-radius:14px;background:#fff;border:1px solid #e1e8ed;padding:8px 8px 2px}
+#cumulativeChart{width:100%;height:100%;display:block}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:10px;color:#5f707c;font-weight:750}
+.legend-item{display:flex;align-items:center;gap:6px}.legend-line{width:22px;height:3px;border-radius:3px;display:inline-block}
+.chart-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.chart-stat{padding:9px 10px;border:1px solid #e2e8ed;border-radius:10px;background:#fbfcfd}.chart-stat .label{font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:#7b8992;font-weight:850}.chart-stat .value{font-size:12px;font-weight:900;color:#17344b;margin-top:3px}
+@media print{.cumulative-chart-card{break-inside:avoid;margin-bottom:4mm!important}.chart-wrap{height:57mm}.chart-title{font-size:12px}.chart-sub{font-size:8px}.chart-badge{font-size:8px;padding:5px 7px}.chart-legend{font-size:8px;margin-top:5px}.chart-stats{margin-top:5px;gap:5px}.chart-stat{padding:5px 6px}.chart-stat .label{font-size:7px}.chart-stat .value{font-size:9px}}
+.bottom-assumption{margin-top:10px!important;margin-bottom:0!important;padding:8px 12px!important;gap:8px!important}
+.bottom-assumption .assumption-icon{width:24px!important;height:24px!important;flex-basis:24px!important;font-size:13px!important;border-width:2px!important}
+.bottom-assumption .assumption-title{font-size:10px!important;margin-bottom:2px!important}
+.bottom-assumption .assumption-copy{font-size:9px!important;line-height:1.35!important}
+
+.investment-story{margin-bottom:18px;border:1px solid #cddfe9;background:linear-gradient(135deg,#f5f9fc 0%,#ffffff 55%,#eef7f2 100%);position:relative;overflow:hidden}
+.investment-story:before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,#003b67,#176b42)}
+.story-head{font-size:16px;font-weight:900;color:#17344b;margin-bottom:4px}
+.story-sub{font-size:10px;color:var(--muted);margin-bottom:13px}
+.story-equation{display:grid;grid-template-columns:1fr 34px 1fr 34px 1.18fr;align-items:center;gap:8px}
+.story-box{background:#fff;border:1px solid #dfe8e3;border-radius:12px;padding:12px;text-align:center}
+.story-box.total{background:linear-gradient(145deg,#00385f,#176b42);border:0;box-shadow:0 10px 22px rgba(0,56,95,.16)}
+.story-label{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#71808a;font-weight:900}
+.story-box.total .story-label{color:rgba(255,255,255,.78)}
+.story-value{font-size:22px;font-weight:950;color:#17344b;margin-top:3px}
+.story-box.total .story-value{font-size:27px;color:#fff}
+.story-note{font-size:9px;color:#6d7b84;margin-top:3px}
+.story-box.total .story-note{color:rgba(255,255,255,.72)}
+.story-plus,.story-equals{font-size:26px;text-align:center;color:#176b42;font-weight:950}
+.story-box.cashflow{background:#f8fbf9;border-color:#cfe3d7}
+.story-initial{margin-top:9px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:9px;color:#6d7b84}.story-initial strong{font-size:12px;color:#17344b}.story-initial small{font-size:8px;color:#8a9690}
+.story-message{margin-top:10px;padding:10px 12px;border-radius:9px;background:#edf7f1;color:#245b42;font-size:10px;font-weight:800;text-align:center}
+.down-payment-row td{font-weight:900;background:#f5faf7}
+@media print{.investment-story{break-inside:avoid;margin-bottom:4mm!important}.story-head{font-size:12px}.story-sub{font-size:8px;margin-bottom:6px}.story-box{padding:7px}.story-label{font-size:7px}.story-value{font-size:14px}.story-box.total .story-value{font-size:17px}.story-note,.story-message{font-size:7px}.story-message{margin-top:5px;padding:5px 7px}.down-payment-row td{background:#f5faf7!important}}
+</style>
+
+<style id="pdf-layout-2page">
+@media print {
+  @page { size: A4 landscape; margin: 9mm; }
+  html, body { width: 100%; background:#fff !important; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .wrap { padding: 0 !important; max-width: none !important; }
+  header { margin: 0 0 8mm !important; padding: 7mm 8mm !important; border-radius: 0 0 10px 10px !important; }
+  header .sub { max-width: 760px; }
+  .assumption-banner { margin-bottom: 5mm !important; padding: 4mm 5mm !important; }
+  .assumption-icon { width: 32px !important; height: 32px !important; flex-basis: 32px !important; font-size: 18px !important; }
+  .assumption-title { font-size: 12px !important; }
+  .assumption-copy { font-size: 10px !important; }
+  .grid { display:block !important; }
+  .grid > div:first-child { width:100% !important; }
+  .grid > div:nth-child(2) { width:100% !important; break-before: page !important; page-break-before: always !important; }
+  .card { padding: 5mm !important; border-radius: 12px !important; margin-bottom: 4mm !important; }
+  .card h2 { font-size: 12px !important; margin-bottom: 3mm !important; }
+  .inputs { gap: 3mm !important; }
+  label { font-size: 9px !important; margin-bottom: 1.5mm !important; }
+  input { font-size: 11px !important; padding: 2.5mm 2.5mm !important; border:1px solid #ccd8d1 !important; border-radius:7px !important; }
+  .market-ref { padding: 2.5mm 3mm !important; font-size: 8.5px !important; }
+  .market-ref .ref-title { font-size: 8px !important; }
+  .market-ref .ref-main { font-size: 10px !important; }
+  .market-ref .ref-note { font-size: 7.5px !important; }
+  .calc-btn, .btn { display:none !important; }
+  .discount-row { gap:3mm !important; margin-top:3mm !important; }
+  .toggle-card { min-width:0 !important; padding:3mm !important; }
+  .toggle-card span { font-size:10px !important; }
+  table { font-size: 9px !important; }
+  th, td { padding: 2.2mm 2mm !important; }
+  .section { margin-top: 0 !important; }
+  .kpis { grid-template-columns: repeat(3,1fr) !important; gap:3mm !important; margin-bottom:4mm !important; }
+  .kpi { min-height: 25mm !important; padding:4mm !important; border-radius:10px !important; }
+  .kpi .t { font-size:8px !important; }
+  .kpi .v { font-size:17px !important; margin-top:2mm !important; }
+  .kpi .s { font-size:8px !important; }
+  .hero { margin-bottom:3mm !important; }
+  .heroValue { font-size:26px !important; }
+  .hero .sub { font-size:9px !important; }
+  .pill { font-size:9px !important; }
+  .note { font-size:8px !important; margin-top:3mm !important; }
+  .reportMeta { font-size:9px !important; }
+}
+
+@media print {
+  body{font-size:10px!important}
+  .wrap{max-width:none!important;width:100%!important;margin:0!important}
+  header{padding:12px 16px!important}
+  .card{padding:12px!important}
+  .grid{gap:10px!important}
+  h1{font-size:24px!important}
+  h2{font-size:13px!important}
+  .inputs{gap:8px!important}
+  .market-ref{padding:7px 8px!important;font-size:9px!important}
+  .market-ref .ref-main{font-size:10px!important}
+  .market-ref .ref-note{font-size:8px!important}
+  .kpi{padding:10px!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="brand-lockup"><div><div class="eyebrow">Investment Intelligence</div><h1>Live ROI Simulator</h1><div class="sub">All figures, calculations and projections shown are based on the assumptions provided and are for illustration purposes only. Actual results may vary depending on market conditions, financing terms, occupancy and other factors.</div></div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="badge">LIVE MODEL</div><button class="btn" onclick="window.print()">Export / Save PDF</button></div></header>
+<div class="reportMeta" id="reportMeta"></div>
+</div>
+
+<div class="grid">
+<div>
+<div class="card">
+<h2>Unit Configuration</h2>
+<div class="inputs" style="margin-bottom:16px">
+<div><label>Unit Number G1</label><input id="unitG1" type="text" value="G1"></div>
+<div><label>Unit Number G2</label><input id="unitG2" type="text" value="G2"></div>
+</div>
+<h2>Live Assumptions</h2>
+<div class="inputs">
+<div><label>Interest Rate (p.a.)</label><input id="rate" type="number" step=".1" value="4.5"></div>
+<div><label>Loan Tenure (years)</label><input id="tenure" type="number" step="1" value="20"></div>
+<div><label>Financing Margin (%)</label><input id="margin" type="number" step="1" value="85"></div>
+<div><label>Down Payment (%)</label><input id="down" type="number" step="1" value="15"></div>
+<div>
+<label>G1 Expected Rental (RM psf)</label>
+<input id="g1" type="number" step=".25" value="9">
+<div class="market-ref" id="g1Reference"></div>
+</div>
+<div>
+<label>G2 Expected Rental (RM psf)</label>
+<input id="g2" type="number" step=".25" value="6.5">
+<div class="market-ref" id="g2Reference"></div>
+</div>
+</div>
+<button type="button" class="btn calc-btn" id="calculateBtn">Calculate Investment</button>
+</div>
+<div class="card section">
+<h2>Property & Unit Configuration</h2>
+<div class="inputs" style="margin-bottom:14px">
+<div><label>G1 Unit Size (sq ft)</label><input id="areaG" type="number" step="1" value="2579"></div>
+<div><label>G2 Unit Size (sq ft)</label><input id="areaM" type="number" step="1" value="1561"></div>
+<div><label>G1 List Price (RM)</label><input id="priceG" type="number" step="1000" value="3258485.34"></div>
+<div><label>G2 List Price (RM)</label><input id="priceM" type="number" step="1000" value="2294314.66"></div>
+</div>
+<div class="discount-row"><div class="toggle-card"><span>Discount (8%)</span><label class="switch"><input id="discount8" type="checkbox" checked><span class="slider"></span></label></div><div class="toggle-card"><span>Bumiputera Discount (10%)</span><label class="switch"><input id="discountBumi" type="checkbox" checked><span class="slider"></span></label></div></div>
+<div class="inputs" style="margin-top:12px;margin-bottom:12px">
+<div><label>Customer Name</label><input id="customer" type="text" placeholder=""></div>
+<div><label>Prepared By</label><input id="prepared" type="text" placeholder=""></div>
+</div>
+<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Change the unit/property size and price above. The total property size and all ROI calculations update automatically.</div>
+<table>
+<thead><tr><th>Item</th><th id="spaUnitG1">G1</th><th id="spaUnitG2">G2</th><th>Combined</th></tr></thead>
+<tbody id="spa"></tbody>
+</table>
+</div>
+</div>
+
+<div>
+<div class="kpis">
+<div class="kpi"><div class="t">Monthly Gross Rent</div><div class="v" id="gross">RM 0</div><div class="s">G1 + G2</div></div>
+<div class="kpi"><div class="t">Monthly Installment</div><div class="v" id="installment">RM 0</div><div class="s">Loan + interest</div></div>
+<div class="kpi" id="cashflowKpi"><div class="t">Net Monthly Cash Flow</div><div class="v" id="cashflow">RM 0</div><div class="s">Before other operating costs</div></div>
+
+</div>
+
+
+<div class="card cumulative-chart-card">
+  <div class="chart-head">
+    <div><div class="chart-title">Cumulative Investment Performance</div><div class="chart-sub">Projected cumulative rental income, financing payments and net cash flow</div></div>
+    <div class="chart-badge" id="chartBadge">Positive Investment Profile</div>
+  </div>
+  <div class="chart-wrap"><svg id="cumulativeChart" viewBox="0 0 760 250" preserveAspectRatio="none" aria-label="Cumulative investment performance chart"></svg></div>
+  <div class="chart-legend">
+    <span class="legend-item"><span class="legend-line" style="background:#176b42"></span>Monthly Gross Rent</span>
+    <span class="legend-item"><span class="legend-line" style="background:#003b67"></span>Monthly Installment</span>
+    <span class="legend-item"><span class="legend-line" style="background:#8b5a2b"></span>Net Monthly Cash Flow</span>
+  </div>
+  <div class="chart-stats">
+    <div class="chart-stat"><div class="label">Total Gross Rent</div><div class="value" id="chartGrossTotal">RM 0</div></div>
+    <div class="chart-stat"><div class="label">Total Installment</div><div class="value" id="chartInstTotal">RM 0</div></div>
+    <div class="chart-stat"><div class="label">Cumulative Net Cash Flow</div><div class="value" id="chartNetTotal">RM 0</div></div>
+  </div>
+</div>
+
+<div class="card investment-story">
+  <div class="story-head">Your Investment Story</div>
+  <div class="story-sub">At the end of the investment period, see the property value plus the cumulative net cash flow generated by the investment.</div>
+  <div class="story-equation">
+    <div class="story-box">
+      <div class="story-label">Property Value</div>
+      <div class="story-value" id="storyPropertyValue">RM 0</div>
+      <div class="story-note">G1 + G2 • after discounts</div>
+    </div>
+    <div class="story-plus">+</div>
+    <div class="story-box cashflow">
+      <div class="story-label">Cumulative Net Cash Flow</div>
+      <div class="story-value" id="storyCashFlowValue">RM 0</div>
+      <div class="story-note">Over the investment period</div>
+    </div>
+    <div class="story-equals">=</div>
+    <div class="story-box total">
+      <div class="story-label">Total Projected Value</div>
+      <div class="story-value" id="storyTotalValue">RM 0</div>
+      <div class="story-note">Property Value + Cumulative Net Cash Flow</div>
+    </div>
+  </div>
+  <div class="story-initial"><span>Initial Cash Commitment</span><strong id="storyDownPayment">RM 0</strong><small id="storyDownPaymentNote">Down Payment</small></div>
+  <div class="story-message" id="storyMessage">Property value + cumulative net cash flow = total projected value.</div>
+</div>
+
+<div class="card">
+<div class="hero"><div><h2 style="margin:0">Investment Snapshot</h2><div class="heroValue" id="yield">0%</div><div class="sub">Combined gross rental yield</div>
+<div style="margin-top:10px;font-size:13px;font-weight:800">Total Property Size: <span id="totalArea">0</span> sq ft</div></div><div class="pill" id="status">Calculating…</div></div>
+<table><thead><tr><th>Metric</th><th id="summaryUnitG1">G1</th><th id="summaryUnitG2">G2</th><th>Combined</th></tr></thead><tbody id="summary"></tbody></table>
+</div>
+</div>
+</div>
+
+<div class="assumption-banner bottom-assumption">
+  <div class="assumption-icon">i</div>
+  <div class="assumption-copy">
+    <div class="assumption-title">PLEASE NOTE: THIS IS AN ASSUMPTION ONLY</div>
+    <div>All figures, calculations and projections are based on the assumptions provided. Actual results may vary depending on market conditions, financing terms, occupancy and other factors.</div>
+  </div>
+</div>
+<div class="note">Illustration and internal presentation model. Actual loan approval, interest rate, financing margin and achievable rental are subject to the relevant bank, SPA and market conditions.</div>
+</div>
+
+<script>
+const money = n => 'RM ' + Math.round(n).toLocaleString('en-MY');
+const pct = n => (n*100).toFixed(2)+'%';
+const fmt = n => n.toLocaleString('en-MY',{maximumFractionDigits:0});
+const rentalReferences={
+ g1:[
+  {psf:8.63,desc:'Ground Floor Shop • 1,600 sqft • RM13,800/month',url:'https://www.propertyguru.com.my/shops-for-rent/in-seksyen-7-uuzch'},
+  {psf:9.09,desc:'Ground Floor Shop • 1,650 sqft • RM15,000/month',url:'https://www.propertyguru.com.my/shops-for-rent/in-seksyen-7-uuzch'},
+  {psf:9.00,desc:'Retail Shop, i-City • 3,200 sqft • RM28,800/month',url:'https://www.propertyguru.com.my/commercial-property-for-rent/in-seksyen-7-uuzch/below-68860-sqft'},
+  {psf:7.83,desc:'Prime Corner Retail Space • 2,300 sqft • RM18,000/month',url:'https://www.propertyguru.com.my/commercial-property-for-rent/in-seksyen-7-uuzch/below-68860-sqft'},
+  {psf:4.24,desc:'Ground Floor Shop • 1,650 sqft • RM7,000/month',url:'https://www.propertyguru.com.my/shops-for-rent/in-seksyen-7-uuzch/priced-over-2k-rm'}
+ ],
+ g2:[
+  {psf:6.50,desc:'Office, Mercu Maybank @ i-City • 1,005 sqft • RM6,533/month',url:'https://www.propertyguru.com.my/commercial-property-for-rent/in-seksyen-7-uuzch/below-68860-sqft'},
+  {psf:5.50,desc:'Office, Mercu Maybank • 1,101 sqft • RM6,056/month',url:'https://www.propertyguru.com.my/offices-for-rent/in-seksyen-7-uuzch/priced-under-15k-rm'},
+  {psf:4.79,desc:'Office, Mercu Maybank Financial Avenue • 7,000 sqft • RM33,500/month',url:'https://www.propertyguru.com.my/offices-for-rent/near-seksyen-7-shah-alam-lrt-station-86372'},
+  {psf:9.00,desc:'Retail Shop, i-City • 3,200 sqft • RM28,800/month',url:'https://www.propertyguru.com.my/commercial-property-for-rent/in-seksyen-7-uuzch/below-68860-sqft'}
+ ]
+};
+function renderRentalReference(id,value,refs){
+ var box=document.getElementById(id);
+ if(!box || !isFinite(value)) return;
+ var best=refs[0], diff=Math.abs(value-best.psf), i;
+ for(i=1;i<refs.length;i++){var d=Math.abs(value-refs[i].psf);if(d<diff){best=refs[i];diff=d;}}
+ var note=diff<=0.75?'Close market reference':'Nearest available reference; use as market context only';
+ box.innerHTML='<div class="ref-title">Market Rental Reference</div>' +
+  '<div class="ref-main">RM '+best.psf.toFixed(2)+' psf</div>' +
+  '<div class="ref-sub">'+best.desc+'</div>' +
+  '<a href="'+best.url+'" target="_blank" rel="noopener">View PropertyGuru reference →</a>' +
+  '<div class="ref-note">'+note+'. Asking rental, not transacted rent.</div>';
+}
+
+function updateRentalReferences(){
+ var g1=Number(document.getElementById('g1').value), g2=Number(document.getElementById('g2').value);
+ renderRentalReference('g1Reference',g1,rentalReferences.g1);
+ renderRentalReference('g2Reference',g2,rentalReferences.g2);
+}
+
+function drawCumulativeChart(rent,inst,cf,tenure){
+  const svg=document.getElementById('cumulativeChart');
+  if(!svg) return;
+  const W=760,H=250,L=54,R=18,T=18,B=34;
+  const months=Math.max(1,Math.round(tenure*12));
+  const grossTotal=rent*months, instTotal=inst*months, netTotal=cf*months;
+  const vals=[0,grossTotal,instTotal,netTotal];
+  const max=Math.max(...vals,1);
+  const min=Math.min(0,...vals);
+  const span=Math.max(1,max-min);
+  const x=m=>L+(m/months)*(W-L-R);
+  const y=v=>T+(max-v)/span*(H-T-B);
+  const points=(total)=>{let a=[];for(let i=0;i<=months;i+=Math.max(1,Math.ceil(months/120))){a.push([x(i),y(total*(i/months))]);}if(a[a.length-1][0]!==x(months))a.push([x(months),y(total)]);return a;};
+  const poly=a=>a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const moneyShort=n=>{const abs=Math.abs(n),sign=n<0?'-':'';if(abs>=1000000)return sign+'RM '+(abs/1000000).toFixed(1)+'m';if(abs>=1000)return sign+'RM '+(abs/1000).toFixed(0)+'k';return sign+'RM '+Math.round(abs).toLocaleString('en-MY');};
+  const grid=[];
+  for(let i=0;i<=4;i++){const v=min+(span*i/4), yy=y(v);grid.push(`<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#e7edf1" stroke-width="1"/>`);grid.push(`<text x="${L-8}" y="${yy+3}" text-anchor="end" font-size="9" fill="#788791">${moneyShort(v)}</text>`);}
+  const xTicks=[];
+  for(let i=0;i<=4;i++){const m=Math.round(months*i/4),xx=x(m);xTicks.push(`<line x1="${xx}" y1="${T}" x2="${xx}" y2="${H-B}" stroke="#f1f4f6" stroke-width="1"/>`);xTicks.push(`<text x="${xx}" y="${H-12}" text-anchor="middle" font-size="9" fill="#788791">${m===0?'Start':(m/12).toFixed(1)+' yr'}</text>`);}
+  const series=[{p:points(grossTotal),c:'#176b42',w:3},{p:points(instTotal),c:'#003b67',w:3},{p:points(netTotal),c:'#8b5a2b',w:3.5}];
+  const paths=series.map(o=>`<polyline points="${poly(o.p)}" fill="none" stroke="${o.c}" stroke-width="${o.w}" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
+  const endX=x(months);
+  const endDots=series.map(o=>{const yy=o.p[o.p.length-1][1];return `<circle cx="${endX}" cy="${yy}" r="4" fill="white" stroke="${o.c}" stroke-width="2.5"/>`;}).join('');
+  const zeroY=(min<=0&&max>=0)?y(0):null;
+  svg.innerHTML=`<rect x="0" y="0" width="760" height="250" rx="12" fill="white"/>${grid.join('')}${xTicks.join('')}${zeroY!==null?`<line x1="${L}" y1="${zeroY}" x2="${W-R}" y2="${zeroY}" stroke="#cbd5dc" stroke-width="1.2" stroke-dasharray="4 4"/>`:''}${paths}${endDots}`;
+  document.getElementById('chartGrossTotal').textContent=moneyShort(grossTotal);
+  document.getElementById('chartInstTotal').textContent=moneyShort(instTotal);
+  document.getElementById('chartNetTotal').textContent=moneyShort(netTotal);
+  const badge=document.getElementById('chartBadge');
+  if(badge){badge.textContent=cf>=0?'Positive Investment Profile':'Cash Flow Requires Review';badge.style.background=cf>=0?'#eaf5ef':'#f8eceb';badge.style.color=cf>=0?'#17633f':'#a33b35';}
+}
+
+function calc(){
+ try{
+ updateRentalReferences();
+ const rateRaw=Number(document.getElementById('rate').value);
+ const tenureRaw=Number(document.getElementById('tenure').value);
+ const downRaw=Number(document.getElementById('down').value);
+ const g1=Number(document.getElementById('g1').value);
+ const g2=Number(document.getElementById('g2').value);
+ const listG=Number(document.getElementById('priceG').value);
+ const listM=Number(document.getElementById('priceM').value);
+ const areaG=Number(document.getElementById('areaG').value);
+ const areaM=Number(document.getElementById('areaM').value);
+ if([rateRaw,tenureRaw,downRaw,g1,g2,listG,listM,areaG,areaM].some(v=>!Number.isFinite(v))){
+   document.getElementById('status').textContent='ENTER VALID FIGURES';
+   return;
+ }
+ const rate=rateRaw/100;
+ const tenure=Math.max(1,tenureRaw);
+ const down=Math.min(1,Math.max(0,downRaw/100));
+
+ const d8=document.getElementById("discount8").checked, db=document.getElementById("discountBumi").checked;
+ // Requested sequence: List Price → 8% Discount → 10% Bumiputera Discount.
+ const after8G=listG*(d8?0.92:1), after8M=listM*(d8?0.92:1);
+ const spaG=after8G*(db?0.90:1), spaM=after8M*(db?0.90:1), spa=spaG+spaM;
+ const dpG=spaG*down, dpM=spaM*down, dp=dpG+dpM;
+ const loanG=spaG-dpG, loanM=spaM-dpM;
+ const intG=loanG*rate*tenure, intM=loanM*rate*tenure;
+ const instG=(loanG+intG)/tenure/12, instM=(loanM+intM)/tenure/12;
+ const rentG=g1*areaG, rentM=g2*areaM, rent=rentG+rentM, inst=instG+instM, cf=rent-inst, annual=cf*12;
+ const yield_=rent*12/spa;
+ drawCumulativeChart(rent,inst,cf,tenure);
+ const storyDP=document.getElementById('storyDownPayment');
+  const storyProperty=document.getElementById('storyPropertyValue');
+  const storyCashFlow=document.getElementById('storyCashFlowValue');
+  const storyTotal=document.getElementById('storyTotalValue');
+  const storyDPNote=document.getElementById('storyDownPaymentNote');
+  const storyMsg=document.getElementById('storyMessage');
+
+  // End-of-investment story:
+  // Combined G1 + G2 SPA/property value + cumulative net cash flow.
+  const cumulativeNet=cf*tenure*12;
+  const totalProjectedValue=spa+cumulativeNet;
+
+  if(storyDP) storyDP.textContent=money(dp);
+  if(storyProperty) storyProperty.textContent=money(spa);
+  if(storyCashFlow) storyCashFlow.textContent=money(cumulativeNet);
+  if(storyTotal) storyTotal.textContent=money(totalProjectedValue);
+  if(storyDPNote) storyDPNote.textContent=(down*100).toFixed(0)+'% of Combined SPA Price';
+
+  if(storyMsg){
+    storyMsg.textContent = cumulativeNet >= 0
+      ? 'Over '+tenure+' years: '+money(spa)+' property value + '+money(cumulativeNet)+' cumulative net cash flow = '+money(totalProjectedValue)+' total projected value.'
+      : 'Over '+tenure+' years: '+money(spa)+' property value less '+money(Math.abs(cumulativeNet))+' cumulative net cash flow = '+money(totalProjectedValue)+' total projected value.';
+    storyMsg.style.background=cumulativeNet>=0?'#edf7f1':'#fbefee';
+    storyMsg.style.color=cumulativeNet>=0?'#245b42':'#9b3e38';
+  }
+
+  const customer=document.getElementById('customer').value.trim();
+ const prepared=document.getElementById('prepared').value.trim();
+  const unitG1=document.getElementById('unitG1').value.trim();
+  const unitG2=document.getElementById('unitG2').value.trim();
+ document.getElementById('reportMeta').innerHTML =
+   (customer ? 'Prepared for: ' + customer : '') +
+   (prepared ? (customer ? ' &nbsp; | &nbsp; ' : '') + 'Prepared by: ' + prepared : '');
+ document.getElementById('gross').textContent=money(rent);
+ document.getElementById('installment').textContent=money(inst);
+ document.getElementById('cashflow').textContent=money(cf);
+  const cashKpi=document.getElementById('cashflowKpi');
+  if(cashKpi){
+    cashKpi.classList.toggle('cash-positive',cf>=0);
+    cashKpi.classList.toggle('cash-negative',cf<0);
+  }
+ document.getElementById('yield').textContent=pct(yield_);
+ document.getElementById('totalArea').textContent=fmt(areaG+areaM);
+ document.getElementById('status').textContent=cf>=0?'POSITIVE CASH FLOW':'NEGATIVE CASH FLOW';
+ document.getElementById('status').className='pill '+(cf>=0?'':'negative');
+ document.getElementById('spa').innerHTML=`
+ <tr><td>List Price</td><td>${money(listG)}</td><td>${money(listM)}</td><td>${money(listG+listM)}</td></tr>
+ <tr><td>Discount (8%)</td><td>${d8?money(-listG*.08):'—'}</td><td>${d8?money(-listM*.08):'—'}</td><td>${d8?money(-(listG+listM)*.08):'—'}</td></tr>
+ <tr><td>Bumiputera Discount (10%)</td><td>${db?money(-after8G*.10):'—'}</td><td>${db?money(-after8M*.10):'—'}</td><td>${db?money(-(after8G+after8M)*.10):'—'}</td></tr>
+ <tr><td>SPA Price</td><td>${money(spaG)}</td><td>${money(spaM)}</td><td>${money(spa)}</td></tr>
+ <tr><td>Area (sq ft)</td><td>${fmt(areaG)}</td><td>${fmt(areaM)}</td><td>${fmt(areaG+areaM)}</td></tr>
+ <tr class="down-payment-row"><td>Down Payment (${(down*100).toFixed(0)}%)</td><td>${money(dpG)}</td><td>${money(dpM)}</td><td>${money(dp)}</td></tr>
+ <tr><td>Loan Amount</td><td>${money(loanG)}</td><td>${money(loanM)}</td><td>${money(loanG+loanM)}</td></tr>`;
+ document.getElementById('summary').innerHTML=`
+ <tr><td>Rental (RM psf)</td><td>${g1.toFixed(2)}</td><td>${g2.toFixed(2)}</td><td>—</td></tr>
+ <tr><td>Monthly Gross Rent</td><td>${money(rentG)}</td><td>${money(rentM)}</td><td class="positive">${money(rent)}</td></tr>
+ <tr><td>Monthly Installment</td><td>${money(instG)}</td><td>${money(instM)}</td><td>${money(inst)}</td></tr>
+ <tr><td>Net Monthly Cash Flow</td><td class="${rentG-instG>=0?'positive':'negative'}">${money(rentG-instG)}</td><td class="${rentM-instM>=0?'positive':'negative'}">${money(rentM-instM)}</td><td class="${cf>=0?'positive':'negative'}">${money(cf)}</td></tr>
+ <tr><td>Net Annual Cash Flow</td><td class="${(rentG-instG)>=0?'positive':'negative'}">${money((rentG-instG)*12)}</td><td class="${(rentM-instM)>=0?'positive':'negative'}">${money((rentM-instM)*12)}</td><td class="${annual>=0?'positive':'negative'}">${money(annual)}</td></tr>`;
+ }catch(err){
+   console.error('Investment calculator error:',err);
+   const status=document.getElementById('status');
+   if(status) status.textContent='READY — CHECK INPUTS';
+ }
+}
+function initSimulator(){
+  const inputs=document.querySelectorAll('input');
+  const margin=document.getElementById('margin');
+  const down=document.getElementById('down');
+  let syncingFinance=false;
+
+  inputs.forEach(x=>{
+    x.addEventListener('input',calc);
+    x.addEventListener('change',calc);
+  });
+
+  if(down){
+    down.addEventListener('input',()=>{
+      if(syncingFinance) return;
+      syncingFinance=true;
+      const d=Math.min(100,Math.max(0,+down.value||0));
+      margin.value=(100-d);
+      syncingFinance=false;
+      calc();
+    });
+  }
+
+  if(margin){
+    margin.addEventListener('input',()=>{
+      if(syncingFinance) return;
+      syncingFinance=true;
+      const m=Math.min(100,Math.max(0,+margin.value||0));
+      down.value=(100-m);
+      syncingFinance=false;
+      calc();
+    });
+  }
+
+  const btn=document.getElementById('calculateBtn');
+  if(btn) btn.addEventListener('click',calc);
+  calc();
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',initSimulator,{once:true});}else{initSimulator();}
+</script>
+</body>
+</html>
